@@ -8,6 +8,8 @@ import 'package:officejs/src/office_interops/excel_js_impl.dart';
 // import 'package:js/js.dart' as js;
 import 'package:provider/provider.dart';
 
+import 'package:http/http.dart' as http;
+
 
 enum RangeBorderSideNames{
   EdgeTop,
@@ -326,16 +328,16 @@ class _MyHomePageState extends State<MyHomePage> {
       var searchText = "test"; // Define the value to search for
 
       // Call the find method on the range
-      // var foundRange = range.find(searchText, completeMatch: false, matchCase: false, searchDirection: 'Forward');
-      //
-      //
-      // // Load the address of the found range using the loadAddress method
-      // var address = await foundRange.loadAddress();
-      //
-      // print("Value found at: $address");
-      // _counter += "Value found at: $address";
+      var foundRange = range.find(searchText, completeMatch: false, matchCase: false, searchDirection: 'Forward');
 
-      await range.findAndActivate(searchText, completeMatch: false, matchCase: false,);
+
+      // Load the address of the found range using the loadAddress method
+      var address = await foundRange.loadAddress();
+
+      print("Value found at: $address");
+      _counter += "Value found at: $address";
+
+      // await range.findAndActivate(searchText, completeMatch: false, matchCase: false,);
 
       // Remove the range from the tracked objects collection
       range.context.trackedObjects.remove(range);
@@ -393,6 +395,66 @@ class _MyHomePageState extends State<MyHomePage> {
       // Run the queued-up command to ensure the range is removed from tracked objects
       await range.context.sync();
 
+    } catch (error) {
+      await showDialog(context: context, builder: (BuildContext) {
+        return SelectableText('Error ${error}');
+      });
+    }
+
+  }
+
+  //find and activate
+  //find method testing
+  Future<void> applyFindAndActivate({
+    required ExcelSheetModel<Worksheet> sheet,
+    required int rowIndex,
+    required int columnCount,
+    required int startColumn,
+    required int rowCount,
+  }) async {
+    try {
+      // ... other code ...
+
+      // Create the range
+      final range = sheet.worksheet.getRangeByIndexes(
+        startRow: rowIndex,
+        startColumn: startColumn,
+        rowCount: rowCount,
+        columnCount: columnCount,
+      );
+
+      // Add the range to the tracked objects collection
+      range.context.trackedObjects.add(range);
+
+      // Load the properties of the range
+      range.load(['values', 'rowCount', 'columnCount', 'format']);
+
+      // Synchronize the context to execute the load operation
+      await range.context.sync();
+
+      var searchText = "test"; // Define the value to search for
+
+      // Call the find method on the range
+      // var foundRange = range.find(searchText, completeMatch: false, matchCase: false, searchDirection: 'Forward');
+      //
+      //
+      // // Load the address of the found range using the loadAddress method
+      // var address = await foundRange.loadAddress();
+      //
+      // print("Value found at: $address");
+      // _counter += "Value found at: $address";
+
+      await range.findAndActivate(searchText, completeMatch: false, matchCase: false,);
+
+      // Remove the range from the tracked objects collection
+      range.context.trackedObjects.remove(range);
+
+      // Run the queued-up command to ensure the range is removed from tracked objects
+      await range.context.sync();
+
+      setState(() {
+        // ... update state ...
+      });
     } catch (error) {
       await showDialog(context: context, builder: (BuildContext) {
         return SelectableText('Error ${error}');
@@ -828,6 +890,43 @@ class _MyHomePageState extends State<MyHomePage> {
                 child: Column(
                   children: [
 
+
+                    //current problems
+                    Text('Current Bugs',style: TextStyle(color: Colors.red),),
+                    //apply download and open
+                    TextButton(onPressed: ()async{
+
+                      try{
+                        var excelApi = Provider.of<addinHelper.ExcelApiI>(context, listen: false);
+                        await excelApi.onLoad();
+                        await Excel.copySheetsFromAsset('assets/files/template.xlsx');
+                      }catch(error){
+                        await showDialog(context: context, builder: (BuildContext) {
+                          return SelectableText('Error ${error}');
+                        });
+                      }
+
+
+
+                    }, child: Text('Import From Dart')),
+                    SizedBox(height: 10,),
+                    TextButton(onPressed: ()async{
+                      try{
+                        js.context.callMethod('saveCreateAndImportWorkbookFromAssets');
+                      }catch(e){
+                        print('Error ${e}');
+                        await showDialog(context: context, builder: (BuildContext) {
+                          return SelectableText('Error ${e}');
+                        });
+
+                      }
+                    }, child: Text('Calling Pure JS Function')),
+                    SizedBox(height: 10,),
+
+
+                    //current problems
+                    Text('Current Functional Features',style: TextStyle(color: Colors.green),),
+
                     //activate sheet by name
                     TextButton(onPressed: ()async{
 
@@ -1134,6 +1233,23 @@ class _MyHomePageState extends State<MyHomePage> {
                     }, child: Text('Search Text')),
                     SizedBox(height: 10,),
 
+                    //apply search and activate cell
+                    TextButton(onPressed: ()async{
+
+                      var excelApi = Provider.of<addinHelper.ExcelApiI>(context, listen: false);
+                      await excelApi.onLoad();
+
+                      //get active sheet
+                      SheetModel<dynamic> sheet = await excelApi.getActiveSheet();
+                      ExcelSheetModel<Worksheet> nSheet = sheet.toExcelSheetNewCode();
+
+                      //by changing row count i can delete as many rows as i want
+                      var res=await applyFindAndActivate(rowIndex: 13,startColumn: 1,rowCount: 2,columnCount: 5,sheet: nSheet);
+
+
+                    }, child: Text('Search & Activate Text')),
+                    SizedBox(height: 10,),
+
 
                     //apply search and replace
                     TextButton(onPressed: ()async{
@@ -1150,6 +1266,25 @@ class _MyHomePageState extends State<MyHomePage> {
 
 
                     }, child: Text('Search and Replace')),
+                    SizedBox(height: 10,),
+
+
+                    //apply download and open
+                    TextButton(onPressed: ()async{
+
+                      try{
+                        var excelApi = Provider.of<addinHelper.ExcelApiI>(context, listen: false);
+                        await excelApi.onLoad();
+                        await Excel.copySheetsFromAsset('assets/files/template.xlsx');
+                      }catch(error){
+                        await showDialog(context: context, builder: (BuildContext) {
+                          return SelectableText('Error ${error}');
+                        });
+                      }
+
+
+
+                    }, child: Text('Download And Open')),
                     SizedBox(height: 10,),
 
 

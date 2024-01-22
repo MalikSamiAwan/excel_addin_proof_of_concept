@@ -288,6 +288,16 @@ class ExcelInteraction with ChangeNotifier{
     }
   }
 
+  //load template xlsx file 1
+  Future<void> loadNewXlsxTemplateFile1() async {
+    try{
+      await excelApi.onLoad();
+      await Excel.copySheetsFromAsset('assets/files/template.xlsx');
+    }catch(error){
+      showCustomDialogCommon(message: 'Error ${error}',title: 'Error!');
+    }
+  }
+
 
 
 }
