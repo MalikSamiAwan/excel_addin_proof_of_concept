@@ -9,6 +9,7 @@ import 'package:officejs/src/office_interops/excel_js_impl.dart';
 import 'package:provider/provider.dart';
 
 import 'package:http/http.dart' as http;
+import 'dart:js' as js;
 
 
 enum RangeBorderSideNames{
